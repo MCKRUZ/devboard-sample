@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DevBoard</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #1e293b;
+      border-bottom: 1px solid #334155;
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    header h1 { font-size: 1.4rem; font-weight: 700; color: #38bdf8; }
+    header span { font-size: 0.85rem; color: #64748b; }
+
+    main { padding: 2rem; max-width: 1200px; margin: 0 auto; }
+
+    .toolbar {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    input, select, textarea {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #e2e8f0;
+      padding: 0.5rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.9rem;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #38bdf8;
+    }
+
+    button {
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: opacity 0.15s;
+    }
+
+    button:hover { opacity: 0.85; }
+    .btn-primary { background: #38bdf8; color: #0f172a; }
+    .btn-danger  { background: #ef4444; color: #fff; }
+    .btn-sm      { padding: 0.3rem 0.6rem; font-size: 0.8rem; }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.25rem;
+    }
+
+    .column {
+      background: #1e293b;
+      border-radius: 10px;
+      padding: 1rem;
+      min-height: 300px;
+    }
+
+    .column-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .column-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .col-todo        .column-title { color: #94a3b8; }
+    .col-in-progress .column-title { color: #fbbf24; }
+    .col-done        .column-title { color: #34d399; }
+
+    .badge {
+      font-size: 0.75rem;
+      background: #334155;
+      color: #94a3b8;
+      border-radius: 999px;
+      padding: 0.15rem 0.5rem;
+    }
+
+    .card {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 0.875rem;
+      margin-bottom: 0.75rem;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+
+    .card:hover { border-color: #38bdf8; }
+
+    .card-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 0.35rem;
+    }
+
+    .card-meta {
+      font-size: 0.75rem;
+      color: #64748b;
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-top: 0.5rem;
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 0.4rem;
+      margin-top: 0.6rem;
+    }
+
+    /* Modal */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-backdrop.open { display: flex; }
+
+    .modal {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 1.5rem;
+      width: 100%;
+      max-width: 540px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .modal h2 { font-size: 1.1rem; margin-bottom: 1rem; }
+
+    .form-group { margin-bottom: 0.875rem; }
+    .form-group label { display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.3rem; }
+    .form-group input,
+    .form-group select,
+    .form-group textarea { width: 100%; }
+    textarea { resize: vertical; min-height: 80px; }
+
+    .modal-actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem; }
+
+    .comments-section { margin-top: 1rem; border-top: 1px solid #334155; padding-top: 1rem; }
+    .comments-section h3 { font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.75rem; }
+
+    .comment {
+      background: #0f172a;
+      border-radius: 6px;
+      padding: 0.6rem 0.75rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.85rem;
+    }
+
+    .comment-author { font-weight: 600; color: #38bdf8; }
+    .comment-body   { color: #cbd5e1; margin-top: 0.2rem; }
+    .comment-date   { font-size: 0.75rem; color: #475569; margin-top: 0.2rem; }
+
+    .comment-form { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
+    .comment-form input { flex: 1; }
+
+    #toast {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      background: #334155;
+      color: #e2e8f0;
+      padding: 0.75rem 1.25rem;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 200;
+    }
+
+    #toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>DevBoard</h1>
+  <span id="item-count">Loading…</span>
+</header>
+
+<main>
+  <div class="toolbar">
+    <input id="filter-assignee" type="text" placeholder="Filter by assignee…" style="width:180px" />
+    <select id="filter-sort">
+      <option value="newest">Newest first</option>
+      <option value="oldest">Oldest first</option>
+      <option value="title">Title A–Z</option>
+    </select>
+    <button class="btn-primary" onclick="openCreateModal()">+ New Work Item</button>
+  </div>
+
+  <div class="board">
+    <div class="column col-todo">
+      <div class="column-header">
+        <span class="column-title">Todo</span>
+        <span class="badge" id="count-todo">0</span>
+      </div>
+      <div id="col-todo"></div>
+    </div>
+    <div class="column col-in-progress">
+      <div class="column-header">
+        <span class="column-title">In Progress</span>
+        <span class="badge" id="count-in-progress">0</span>
+      </div>
+      <div id="col-in-progress"></div>
+    </div>
+    <div class="column col-done">
+      <div class="column-header">
+        <span class="column-title">Done</span>
+        <span class="badge" id="count-done">0</span>
+      </div>
+      <div id="col-done"></div>
+    </div>
+  </div>
+</main>
+
+<!-- Create/Edit Modal -->
+<div class="modal-backdrop" id="item-modal">
+  <div class="modal">
+    <h2 id="modal-title">New Work Item</h2>
+    <div class="form-group">
+      <label>Title</label>
+      <input id="f-title" type="text" placeholder="What needs to be done?" />
+    </div>
+    <div class="form-group">
+      <label>Description</label>
+      <textarea id="f-description" placeholder="Optional details…"></textarea>
+    </div>
+    <div class="form-group">
+      <label>Assignee</label>
+      <input id="f-assignee" type="text" placeholder="e.g. alice" />
+    </div>
+    <div class="form-group">
+      <label>Status</label>
+      <select id="f-status">
+        <option value="todo">Todo</option>
+        <option value="in-progress">In Progress</option>
+        <option value="done">Done</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveItem()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Detail / Comments Modal -->
+<div class="modal-backdrop" id="detail-modal">
+  <div class="modal">
+    <h2 id="detail-title"></h2>
+    <p id="detail-description" style="font-size:0.875rem;color:#94a3b8;margin-bottom:0.5rem;"></p>
+    <div class="card-meta" style="margin-bottom:0.5rem;">
+      <span id="detail-assignee"></span>
+      <span id="detail-status"></span>
+    </div>
+
+    <div class="comments-section">
+      <h3>Comments</h3>
+      <div id="comments-list"></div>
+      <div class="comment-form">
+        <input id="c-author" type="text" placeholder="Your name" style="width:130px;flex:none" />
+        <input id="c-body" type="text" placeholder="Add a comment…" />
+        <button class="btn-primary btn-sm" onclick="addComment()">Post</button>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button onclick="closeDetailModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  const API = '/api/workitems';
+  let allItems = [];
+  let editingId = null;
+  let detailItemId = null;
+
+  async function loadItems() {
+    const assignee = document.getElementById('filter-assignee').value.trim();
+    const sort     = document.getElementById('filter-sort').value;
+    const params   = new URLSearchParams();
+    if (assignee) params.set('assignee', assignee);
+    if (sort !== 'newest') params.set('sort', sort);
+
+    const res   = await fetch(`${API}?${params}`);
+    allItems    = await res.json();
+    renderBoard(allItems);
+  }
+
+  function renderBoard(items) {
+    const cols = { 'todo': [], 'in-progress': [], 'done': [] };
+    items.forEach(i => {
+      if (cols[i.status]) cols[i.status].push(i);
+    });
+
+    Object.entries(cols).forEach(([status, list]) => {
+      const colEl    = document.getElementById(`col-${status}`);
+      const countEl  = document.getElementById(`count-${status}`);
+      countEl.textContent = list.length;
+      colEl.innerHTML = list.map(cardHtml).join('');
+    });
+
+    document.getElementById('item-count').textContent =
+      `${items.length} item${items.length !== 1 ? 's' : ''}`;
+  }
+
+  function cardHtml(item) {
+    const assigneeText = item.assignee ? `@${item.assignee}` : 'Unassigned';
+    const date = new Date(item.createdAt).toLocaleDateString();
+    const comments = item.commentCount > 0
+      ? `<span>${item.commentCount} comment${item.commentCount !== 1 ? 's' : ''}</span>`
+      : '';
+    return `
+      <div class="card" onclick="openDetail(${item.id})">
+        <div class="card-title">${escHtml(item.title)}</div>
+        ${item.description ? `<div style="font-size:0.8rem;color:#94a3b8">${escHtml(item.description)}</div>` : ''}
+        <div class="card-meta">
+          <span>${assigneeText}</span>
+          <span>${date}</span>
+          ${comments}
+        </div>
+        <div class="card-actions" onclick="event.stopPropagation()">
+          <button class="btn-sm btn-primary" onclick="openEditModal(${item.id})">Edit</button>
+          <button class="btn-sm btn-danger"  onclick="deleteItem(${item.id})">Delete</button>
+        </div>
+      </div>`;
+  }
+
+  function escHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  // ── Create / Edit ──────────────────────────────────────────────────────────
+
+  function openCreateModal() {
+    editingId = null;
+    document.getElementById('modal-title').textContent = 'New Work Item';
+    document.getElementById('f-title').value       = '';
+    document.getElementById('f-description').value = '';
+    document.getElementById('f-assignee').value    = '';
+    document.getElementById('f-status').value      = 'todo';
+    document.getElementById('item-modal').classList.add('open');
+  }
+
+  function openEditModal(id) {
+    const item = allItems.find(i => i.id === id);
+    if (!item) return;
+    editingId = id;
+    document.getElementById('modal-title').textContent   = 'Edit Work Item';
+    document.getElementById('f-title').value             = item.title;
+    document.getElementById('f-description').value       = item.description || '';
+    document.getElementById('f-assignee').value          = item.assignee || '';
+    document.getElementById('f-status').value            = item.status;
+    document.getElementById('item-modal').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('item-modal').classList.remove('open');
+  }
+
+  async function saveItem() {
+    const payload = {
+      title:       document.getElementById('f-title').value.trim(),
+      description: document.getElementById('f-description').value.trim() || null,
+      assignee:    document.getElementById('f-assignee').value.trim() || null,
+      status:      document.getElementById('f-status').value,
+    };
+
+    if (!payload.title) { showToast('Title is required'); return; }
+
+    const url    = editingId ? `${API}/${editingId}` : API;
+    const method = editingId ? 'PUT' : 'POST';
+
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (res.ok) {
+      closeModal();
+      loadItems();
+      showToast(editingId ? 'Work item updated' : 'Work item created');
+    } else {
+      const err = await res.json().catch(() => ({}));
+      showToast(err.error || 'Save failed');
+    }
+  }
+
+  async function deleteItem(id) {
+    if (!confirm('Delete this work item?')) return;
+    const res = await fetch(`${API}/${id}`, { method: 'DELETE' });
+    if (res.ok) { loadItems(); showToast('Deleted'); }
+  }
+
+  // ── Detail / Comments ──────────────────────────────────────────────────────
+
+  async function openDetail(id) {
+    detailItemId = id;
+    const item = allItems.find(i => i.id === id);
+    if (!item) return;
+
+    document.getElementById('detail-title').textContent       = item.title;
+    document.getElementById('detail-description').textContent = item.description || '';
+    document.getElementById('detail-assignee').textContent    = item.assignee ? `@${item.assignee}` : 'Unassigned';
+    document.getElementById('detail-status').textContent      = item.status;
+    document.getElementById('c-author').value = '';
+    document.getElementById('c-body').value   = '';
+
+    await loadComments(id);
+    document.getElementById('detail-modal').classList.add('open');
+  }
+
+  function closeDetailModal() {
+    document.getElementById('detail-modal').classList.remove('open');
+    detailItemId = null;
+  }
+
+  async function loadComments(workItemId) {
+    const res      = await fetch(`${API}/${workItemId}/comments`);
+    const comments = await res.json();
+    const list     = document.getElementById('comments-list');
+
+    if (comments.length === 0) {
+      list.innerHTML = '<p style="font-size:0.8rem;color:#475569">No comments yet.</p>';
+      return;
+    }
+
+    list.innerHTML = comments.map(c => `
+      <div class="comment">
+        <div class="comment-author">${escHtml(c.author)}</div>
+        <div class="comment-body">${escHtml(c.body)}</div>
+        <div class="comment-date">${new Date(c.createdAt).toLocaleString()}</div>
+      </div>`).join('');
+  }
+
+  async function addComment() {
+    const author = document.getElementById('c-author').value.trim();
+    const body   = document.getElementById('c-body').value.trim();
+    if (!author || !body) { showToast('Author and body are required'); return; }
+
+    const res = await fetch(`${API}/${detailItemId}/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ author, body }),
+    });
+
+    if (res.ok) {
+      document.getElementById('c-body').value = '';
+      await loadComments(detailItemId);
+      loadItems();
+    } else {
+      showToast('Failed to post comment');
+    }
+  }
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+
+  function showToast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2500);
+  }
+
+  // Debounce filter inputs
+  let filterTimer;
+  ['filter-assignee', 'filter-sort'].forEach(id => {
+    document.getElementById(id).addEventListener('input', () => {
+      clearTimeout(filterTimer);
+      filterTimer = setTimeout(loadItems, 300);
+    });
+  });
+
+  // Close modals on backdrop click
+  document.getElementById('item-modal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeModal();
+  });
+  document.getElementById('detail-modal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeDetailModal();
+  });
+
+  loadItems();
+</script>
+</body>
+</html>
